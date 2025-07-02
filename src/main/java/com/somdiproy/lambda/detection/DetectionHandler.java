@@ -48,7 +48,7 @@ public class DetectionHandler implements RequestHandler<DetectionRequest, Detect
 	private void initializeExecutorService() {
 		synchronized (lock) {
 			if (executorService == null || executorService.isShutdown()) {
-				executorService = Executors.newFixedThreadPool(3, r -> {
+				executorService = Executors.newFixedThreadPool(1, r -> {
 					Thread t = new Thread(r);
 					t.setDaemon(true); // Allow JVM to exit
 					t.setName("nova-detection-worker-" + t.getId());

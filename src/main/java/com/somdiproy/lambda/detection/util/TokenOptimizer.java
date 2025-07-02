@@ -37,9 +37,10 @@ public class TokenOptimizer {
         optimized = EXTRA_WHITESPACE.matcher(optimized).replaceAll(" ");
         optimized = optimized.trim();
         
-        // Limit content size (approx 10K chars for 4K tokens)
-        if (optimized.length() > 10000) {
-            optimized = optimized.substring(0, 10000);
+        
+        // Limit content size (approx 40K chars for larger files)
+        if (optimized.length() > 40000) {
+            optimized = optimized.substring(0, 40000);
         }
         
         return optimized;

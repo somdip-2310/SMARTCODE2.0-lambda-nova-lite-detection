@@ -48,7 +48,9 @@ public class DetectionHandler implements RequestHandler<DetectionRequest, Detect
 	private void initializeExecutorService() {
 		synchronized (lock) {
 			if (executorService == null || executorService.isShutdown()) {
-				executorService = Executors.newFixedThreadPool(1, r -> {
+				// Increase thread pool size for parallel processing
+				int threadCount = Math.min(4, Runtime.getRuntime().availableProcessors());
+				executorService = Executors.newFixedThreadPool(threadCount, r -> {
 					Thread t = new Thread(r);
 					t.setDaemon(true); // Allow JVM to exit
 					t.setName("nova-detection-worker-" + t.getId());
@@ -96,7 +98,11 @@ public class DetectionHandler implements RequestHandler<DetectionRequest, Detect
 			int filesAnalyzed = 0;
 			for (Future<List<Issue>> future : futures) {
 				try {
-					List<Issue> fileIssues = future.get(30, TimeUnit.SECONDS);
+					// Dynamic timeout based on Lambda context
+					int remainingTime = context.getRemainingTimeInMillis();
+					int safetyBuffer = 30000; // 30 seconds safety buffer
+					int timeoutPerFile = Math.max(10000, (remainingTime - safetyBuffer) / futures.size());
+					List<Issue> fileIssues = future.get(timeoutPerFile, TimeUnit.MILLISECONDS);
 					allIssues.addAll(fileIssues);
 					filesAnalyzed++;
 				} catch (TimeoutException e) {

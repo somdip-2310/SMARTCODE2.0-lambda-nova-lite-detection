@@ -8,6 +8,7 @@ import com.somdiproy.lambda.detection.model.DetectionResponse;
 import com.somdiproy.lambda.detection.model.Issue;
 import com.somdiproy.lambda.detection.service.NovaInvokerService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.somdiproy.lambda.detection.util.TokenOptimizer;
 
 import java.util.*;
 import java.util.concurrent.*;

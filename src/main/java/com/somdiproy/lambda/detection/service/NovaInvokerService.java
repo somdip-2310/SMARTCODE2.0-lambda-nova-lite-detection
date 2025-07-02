@@ -99,7 +99,7 @@ public class NovaInvokerService {
             .credentialsProvider(DefaultCredentialsProvider.create())
             .build();
         
-        for (int attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
             try {
             	// Build the request
                 InferenceConfiguration inferenceConfig = InferenceConfiguration.builder()
@@ -166,7 +166,7 @@ public class NovaInvokerService {
                 return response;
                 
             } catch (ThrottlingException e) {
-                logger.warn("Rate limit hit on attempt {}: {}", attempt + 1, e.getMessage());
+            	logger.warn("Rate limit hit on attempt {}: {}", attempt, e.getMessage());
                 lastException = e;
                 if (attempt < MAX_RETRIES - 1) {
                     try {
@@ -177,7 +177,7 @@ public class NovaInvokerService {
                     }
                 }
             } catch (ModelTimeoutException e) {
-                logger.warn("Model timeout on attempt {}: {}", attempt + 1, e.getMessage());
+            	logger.warn("Model timeout on attempt {}: {}", attempt, e.getMessage());
                 lastException = e;
                 if (attempt < MAX_RETRIES - 1) {
                     try {
@@ -197,9 +197,9 @@ public class NovaInvokerService {
                 logger.error("Invalid request: {}", e.getMessage());
                 throw new NovaInvokerException("Invalid request parameters", e);
             } catch (BedrockRuntimeException e) {
-                logger.error("Bedrock error on attempt {}: {}", attempt + 1, e.getMessage());
+            	logger.error("Bedrock error on attempt {}: {}", attempt, e.getMessage());
                 lastException = e;
-                if (attempt < MAX_RETRIES - 1) {
+                if (attempt < MAX_RETRIES) {
                     try {
                         Thread.sleep(RETRY_DELAY_MS);
                     } catch (InterruptedException ie) {
@@ -217,11 +217,57 @@ public class NovaInvokerService {
         }
         
         // All retries failed
+     // All retries failed
         throw new NovaInvokerException(
             String.format("Failed to invoke Nova after %d attempts: %s", 
                          MAX_RETRIES, lastException.getMessage()), 
             lastException
         );
+    }
+    
+    /**
+     * Parse Converse API response
+     */
+    private NovaResponse parseConverseResponse(ConverseResponse response, String modelId) throws NovaInvokerException {
+        try {
+            // Extract response text from Converse response
+            String responseText = "";
+            ConverseOutput output = response.output();
+            
+            if (output != null && output.message() != null) {
+                Message outputMessage = output.message();
+                if (outputMessage.content() != null && !outputMessage.content().isEmpty()) {
+                    ContentBlock firstContent = outputMessage.content().get(0);
+                    if (firstContent.text() != null) {
+                        responseText = firstContent.text();
+                    }
+                }
+            }
+            
+            // Extract token usage
+            TokenUsage usage = response.usage();
+            int inputTokens = usage != null ? usage.inputTokens() : 0;
+            int outputTokens = usage != null ? usage.outputTokens() : 0;
+            int totalTokens = usage != null ? usage.totalTokens() : (inputTokens + outputTokens);
+            
+            // Calculate cost based on model
+            double costPerMillion = getCostPerMillion(modelId);
+            double estimatedCost = (totalTokens / 1_000_000.0) * costPerMillion;
+            
+            return NovaResponse.builder()
+                .responseText(responseText)
+                .inputTokens(inputTokens)
+                .outputTokens(outputTokens)
+                .totalTokens(totalTokens)
+                .estimatedCost(estimatedCost)
+                .modelId(modelId)
+                .successful(true)
+                .timestamp(System.currentTimeMillis())
+                .build();
+                
+        } catch (Exception e) {
+            throw new NovaInvokerException("Failed to parse response: " + e.getMessage(), e);
+        }
     }
     
     /**

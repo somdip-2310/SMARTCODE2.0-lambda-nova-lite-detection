@@ -509,8 +509,8 @@ public class DetectionHandler implements RequestHandler<DetectionRequest, Detect
 	 * Parse line number from string
 	 */
 	private int parseLineNumber(String lineStr) {
-		if (lineStr == null)
-			return 0;
+		if (lineStr == null || lineStr.isEmpty() || lineStr.equals("0"))
+			return 1;
 		try {
 			// Handle ranges like "10-15"
 			if (lineStr.contains("-")) {

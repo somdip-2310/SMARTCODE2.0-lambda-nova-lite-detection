@@ -272,35 +272,40 @@ public class DetectionHandler implements RequestHandler<DetectionRequest, Detect
 	 * Build security analysis prompt
 	 */
 	private String buildSecurityAnalysisPrompt(DetectionRequest.FileInput file) {
-		return String.format("""
-				Analyze this %s code for security vulnerabilities. Focus on:
-				- SQL Injection vulnerabilities
-				- Cross-Site Scripting (XSS) risks
-				- Insecure deserialization
-				- Hardcoded credentials or secrets
-				- Cryptographic weaknesses
-				- Authentication/authorization flaws
-				- Path traversal vulnerabilities
+	    return String.format("""
+	            Analyze this %s code for security vulnerabilities. Focus on:
+	            - SQL Injection vulnerabilities
+	            - Cross-Site Scripting (XSS) risks
+	            - Insecure deserialization
+	            - Hardcoded credentials or secrets
+	            - Cryptographic weaknesses
+	            - Authentication/authorization flaws
+	            - Path traversal vulnerabilities
 
-				For each issue found, provide:
-				1. Issue type (e.g., "SQL_INJECTION")
-				2. Severity (critical/high/medium/low)
-				3. Line number(s) affected
-				4. Brief description (max 2 sentences)
-				5. The vulnerable code snippet
+	            For each issue found, provide:
+	            1. Issue type (e.g., "SQL_INJECTION")
+	            2. Severity (critical/high/medium/low)
+	            3. Line number(s) affected
+	            4. Detailed description explaining impact and context (2-3 sentences)
+	            5. The vulnerable code snippet
 
-				Return results in this exact format:
-				ISSUE_START
-				type: [ISSUE_TYPE]
-				severity: [SEVERITY]
-				line: [LINE_NUMBER]
-				description: [DESCRIPTION]
-				code: [CODE_SNIPPET]
-				ISSUE_END
+	            DESCRIPTION FORMAT: Start with the vulnerability type, explain the security risk, 
+	            describe the potential impact (e.g., "SQL Injection vulnerability allows attackers 
+	            to manipulate database queries. This could lead to unauthorized data access, 
+	            modification, or deletion. The user input is directly concatenated into the SQL query without validation.")
 
-				Code to analyze:
-				%s
-				""", file.getLanguage(), file.getOptimizedContent());
+	            Return results in this exact format:
+	            ISSUE_START
+	            type: [ISSUE_TYPE]
+	            severity: [SEVERITY]
+	            line: [LINE_NUMBER]
+	            description: [DETAILED_DESCRIPTION_WITH_IMPACT]
+	            code: [CODE_SNIPPET]
+	            ISSUE_END
+
+	            Code to analyze:
+	            %s
+	            """, file.getLanguage(), file.getOptimizedContent());
 	}
 
 	/**

@@ -481,10 +481,25 @@ public class DetectionHandler implements RequestHandler<DetectionRequest, Detect
 			return null;
 		}
 
-		return Issue.builder().id(UUID.randomUUID().toString()).type(fields.get("type")).category(category)
-				.severity(fields.get("severity")).confidence(calculateConfidence(fields)).file(file.getPath())
-				.line(parseLineNumber(fields.get("line"))).column(0).description(fields.get("description"))
-				.codeSnippet(fields.get("code")).language(file.getLanguage()).build();
+		int lineNumber = parseLineNumber(fields.get("line"));
+		// Only create issue if we have a valid line number (not -1)
+		if (lineNumber <= 0) {
+		    return null;  // ← Skip issues without valid line numbers
+		}
+
+		return Issue.builder()
+		    .id(UUID.randomUUID().toString())
+		    .type(fields.get("type"))
+		    .category(category)
+		    .severity(fields.get("severity"))
+		    .confidence(calculateConfidence(fields))
+		    .file(file.getPath())
+		    .line(lineNumber)
+		    .column(0)
+		    .description(fields.get("description"))
+		    .codeSnippet(fields.get("code"))
+		    .language(file.getLanguage())
+		    .build();
 	}
 
 	/**
@@ -514,17 +529,17 @@ public class DetectionHandler implements RequestHandler<DetectionRequest, Detect
 	 * Parse line number from string
 	 */
 	private int parseLineNumber(String lineStr) {
-		if (lineStr == null || lineStr.isEmpty() || lineStr.equals("0"))
-			return 1;
-		try {
-			// Handle ranges like "10-15"
-			if (lineStr.contains("-")) {
-				return Integer.parseInt(lineStr.split("-")[0]);
-			}
-			return Integer.parseInt(lineStr);
-		} catch (Exception e) {
-			return 0;
-		}
+	    if (lineStr == null || lineStr.isEmpty() || lineStr.equals("0"))
+	        return -1;  // ← Return -1 to indicate invalid/unknown line
+	    try {
+	        // Handle ranges like "10-15"
+	        if (lineStr.contains("-")) {
+	            return Integer.parseInt(lineStr.split("-")[0]);
+	        }
+	        return Integer.parseInt(lineStr);
+	    } catch (NumberFormatException e) {
+	        return -1;  // ← Return -1 for unparseable line numbers
+	    }
 	}
 
 	/**

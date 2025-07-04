@@ -37,6 +37,8 @@ public class DetectionRequest {
     @JsonProperty("options")
     private DetectionOptions options;
     
+    
+    
     // Constructors
     public DetectionRequest() {
         this.timestamp = System.currentTimeMillis();

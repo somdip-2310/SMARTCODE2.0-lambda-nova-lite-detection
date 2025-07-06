@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  */
 public class DetectionHandler implements RequestHandler<DetectionRequest, DetectionResponse> {
 	private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(DetectionHandler.class);
-    
+
 	private final ObjectMapper objectMapper = new ObjectMapper();
 	private final NovaInvokerService novaInvoker;
 
@@ -272,40 +272,42 @@ public class DetectionHandler implements RequestHandler<DetectionRequest, Detect
 	 * Build security analysis prompt
 	 */
 	private String buildSecurityAnalysisPrompt(DetectionRequest.FileInput file) {
-	    return String.format("""
-	            Analyze this %s code for security vulnerabilities. Focus on:
-	            - SQL Injection vulnerabilities
-	            - Cross-Site Scripting (XSS) risks
-	            - Insecure deserialization
-	            - Hardcoded credentials or secrets
-	            - Cryptographic weaknesses
-	            - Authentication/authorization flaws
-	            - Path traversal vulnerabilities
+		return String.format(
+				"""
+						Analyze this %s code for security vulnerabilities. Focus on:
+						- SQL Injection vulnerabilities
+						- Cross-Site Scripting (XSS) risks
+						- Insecure deserialization
+						- Hardcoded credentials or secrets
+						- Cryptographic weaknesses
+						- Authentication/authorization flaws
+						- Path traversal vulnerabilities
 
-	            For each issue found, provide:
-	            1. Issue type (e.g., "SQL_INJECTION")
-	            2. Severity (critical/high/medium/low)
-	            3. Line number(s) affected
-	            4. Detailed description explaining impact and context (2-3 sentences)
-	            5. The vulnerable code snippet
+						For each issue found, provide:
+						1. Issue type (e.g., "SQL_INJECTION")
+						2. Severity (critical/high/medium/low)
+						3. Line number(s) affected
+						4. Detailed description explaining impact and context (2-3 sentences)
+						5. The vulnerable code snippet
 
-	            DESCRIPTION FORMAT: Start with the vulnerability type, explain the security risk, 
-	            describe the potential impact (e.g., "SQL Injection vulnerability allows attackers 
-	            to manipulate database queries. This could lead to unauthorized data access, 
-	            modification, or deletion. The user input is directly concatenated into the SQL query without validation.")
+						DESCRIPTION FORMAT: Start with the vulnerability type, explain the security risk,
+						describe the potential impact (e.g., "SQL Injection vulnerability allows attackers
+						to manipulate database queries. This could lead to unauthorized data access,
+						modification, or deletion. The user input is directly concatenated into the SQL query without validation.")
 
-	            Return results in this exact format:
-	            ISSUE_START
-	            type: [ISSUE_TYPE]
-	            severity: [SEVERITY]
-	            line: [LINE_NUMBER]
-	            description: [DETAILED_DESCRIPTION_WITH_IMPACT]
-	            code: [CODE_SNIPPET]
-	            ISSUE_END
+						Return results in this exact format:
+						ISSUE_START
+						type: [ISSUE_TYPE]
+						severity: [SEVERITY]
+						line: [LINE_NUMBER]
+						description: [DETAILED_DESCRIPTION_WITH_IMPACT]
+						code: [CODE_SNIPPET]
+						ISSUE_END
 
-	            Code to analyze:
-	            %s
-	            """, file.getLanguage(), file.getOptimizedContent());
+						Code to analyze:
+						%s
+						""",
+				file.getLanguage(), file.getOptimizedContent());
 	}
 
 	/**
@@ -313,15 +315,15 @@ public class DetectionHandler implements RequestHandler<DetectionRequest, Detect
 	 */
 	private String buildPerformanceAnalysisPrompt(DetectionRequest.FileInput file) {
 		return String.format("""
-				Analyze this %s code for performance issues. Focus on:
-				- Time complexity problems (O(n²) or worse)
-				- Memory leaks or excessive allocation
-				- Inefficient database queries
-				- Blocking I/O operations
-				- Unnecessary loops or recursion
-				- Missing caching opportunities
+								Analyze this %s code for performance issues. Focus on:
+								- Time complexity problems (O(n²) or worse)
+								- Memory leaks or excessive allocation
+								- Inefficient database queries
+								- Blocking I/O operations
+								- Unnecessary loops or recursion
+								- Missing caching opportunities
 
-				For each issue found, provide:
+								For each issue found, provide:
 				1. Issue type (e.g., "INEFFICIENT_LOOP")
 				2. Severity (high/medium/low)
 				3. Line number(s) affected
@@ -329,17 +331,17 @@ public class DetectionHandler implements RequestHandler<DetectionRequest, Detect
 				5. The problematic code snippet
 
 				Return results in this exact format:
-				ISSUE_START
-				type: [ISSUE_TYPE]
-				severity: [SEVERITY]
-				line: [LINE_NUMBER]
-				description: [DESCRIPTION]
-				code: [CODE_SNIPPET]
-				ISSUE_END
+								ISSUE_START
+								type: [ISSUE_TYPE]
+								severity: [SEVERITY]
+								line: [LINE_NUMBER]
+								description: [DESCRIPTION]
+								code: [CODE_SNIPPET]
+								ISSUE_END
 
-				Code to analyze:
-				%s
-				""", file.getLanguage(), file.getOptimizedContent());
+								Code to analyze:
+								%s
+								""", file.getLanguage(), file.getOptimizedContent());
 	}
 
 	/**
@@ -347,33 +349,33 @@ public class DetectionHandler implements RequestHandler<DetectionRequest, Detect
 	 */
 	private String buildQualityAnalysisPrompt(DetectionRequest.FileInput file) {
 		return String.format("""
-				Analyze this %s code for quality issues. Focus on:
-				- Code duplication (DRY violations)
-				- High cyclomatic complexity
-				- Poor naming conventions
-				- Missing error handling
-				- Lack of documentation
-				- Code smells and anti-patterns
+								Analyze this %s code for quality issues. Focus on:
+								- Code duplication (DRY violations)
+								- High cyclomatic complexity
+								- Poor naming conventions
+								- Missing error handling
+								- Lack of documentation
+								- Code smells and anti-patterns
 
-				For each issue found, provide:
-				1. Issue type (e.g., "CODE_DUPLICATION")
-				2. Severity (medium/low)
+								For each issue found, provide ALL of the following:
+				1. Issue type (e.g., "CODE_DUPLICATION") - REQUIRED
+				2. Severity (medium/low) - REQUIRED
 				3. Line number(s) affected
 				4. Quality impact description
 				5. The problematic code snippet
 
-				Return results in this exact format:
-				ISSUE_START
-				type: [ISSUE_TYPE]
-				severity: [SEVERITY]
-				line: [LINE_NUMBER]
-				description: [DESCRIPTION]
-				code: [CODE_SNIPPET]
-				ISSUE_END
+				Return results in this EXACT format with ALL fields:
+								ISSUE_START
+								type: [ISSUE_TYPE]
+								severity: [SEVERITY]
+								line: [LINE_NUMBER]
+								description: [DESCRIPTION]
+								code: [CODE_SNIPPET]
+								ISSUE_END
 
-				Code to analyze:
-				%s
-				""", file.getLanguage(), file.getOptimizedContent());
+								Code to analyze:
+								%s
+								""", file.getLanguage(), file.getOptimizedContent());
 	}
 
 	/**
@@ -381,33 +383,33 @@ public class DetectionHandler implements RequestHandler<DetectionRequest, Detect
 	 */
 	private String buildBestPracticesPrompt(DetectionRequest.FileInput file) {
 		return String.format("""
-				Analyze this %s code for violations of language-specific best practices. Focus on:
-				- Language idioms and conventions
-				- Framework-specific patterns
-				- Resource management
-				- Exception handling patterns
-				- Concurrency issues
-				- Dependency management
+								Analyze this %s code for violations of language-specific best practices. Focus on:
+								- Language idioms and conventions
+								- Framework-specific patterns
+								- Resource management
+								- Exception handling patterns
+								- Concurrency issues
+								- Dependency management
 
-				For each issue found, provide:
-				1. Issue type (e.g., "RESOURCE_LEAK")
-				2. Severity (medium/low)
+								For each issue found, provide ALL of the following:
+				1. Issue type (e.g., "RESOURCE_LEAK") - REQUIRED
+				2. Severity (medium/low) - REQUIRED
 				3. Line number(s) affected
 				4. Best practice description
 				5. The problematic code snippet
 
-				Return results in this exact format:
-				ISSUE_START
-				type: [ISSUE_TYPE]
-				severity: [SEVERITY]
-				line: [LINE_NUMBER]
-				description: [DESCRIPTION]
-				code: [CODE_SNIPPET]
-				ISSUE_END
+				Return results in this EXACT format with ALL fields:
+								ISSUE_START
+								type: [ISSUE_TYPE]
+								severity: [SEVERITY]
+								line: [LINE_NUMBER]
+								description: [DESCRIPTION]
+								code: [CODE_SNIPPET]
+								ISSUE_END
 
-				Code to analyze:
-				%s
-				""", file.getLanguage(), file.getOptimizedContent());
+								Code to analyze:
+								%s
+								""", file.getLanguage(), file.getOptimizedContent());
 	}
 
 	/**
@@ -477,30 +479,30 @@ public class DetectionHandler implements RequestHandler<DetectionRequest, Detect
 			}
 		}
 
-		if (!fields.containsKey("type") || !fields.containsKey("severity")) {
+		// Validate required fields
+		String type = fields.get("type");
+		String severity = fields.get("severity");
+
+		if (type == null || type.trim().isEmpty() || severity == null || severity.trim().isEmpty()) {
+			log.warn("Skipping issue with missing type or severity: type={}, severity={}", type, severity);
 			return null;
 		}
+
+		// Clean up the type field
+		type = type.trim().toUpperCase().replace(" ", "_");
+		fields.put("type", type);
 
 		int lineNumber = parseLineNumber(fields.get("line"));
 		// Only create issue if we have a valid line number (not -1)
 		if (lineNumber <= 0) {
-		    return null;  // ← Skip issues without valid line numbers
+			return null; // ← Skip issues without valid line numbers
 		}
 
-		return Issue.builder()
-			    .id(UUID.randomUUID().toString())
-			    .type(fields.get("type"))
-			    .title(fields.get("type") != null ? fields.get("type").replace("_", " ") : "Unknown Issue")
-			    .category(category)
-			    .severity(fields.get("severity"))
-			    .confidence(calculateConfidence(fields))
-			    .file(file.getPath())
-			    .line(lineNumber)
-			    .column(0)
-			    .description(fields.get("description"))
-			    .codeSnippet(fields.get("code"))
-			    .language(file.getLanguage())
-			    .build();
+		return Issue.builder().id(UUID.randomUUID().toString()).type(fields.get("type"))
+				.title(fields.get("type") != null ? fields.get("type").replace("_", " ") : "Unknown Issue")
+				.category(category).severity(fields.get("severity")).confidence(calculateConfidence(fields))
+				.file(file.getPath()).line(lineNumber).column(0).description(fields.get("description"))
+				.codeSnippet(fields.get("code")).language(file.getLanguage()).build();
 	}
 
 	/**
@@ -530,17 +532,17 @@ public class DetectionHandler implements RequestHandler<DetectionRequest, Detect
 	 * Parse line number from string
 	 */
 	private int parseLineNumber(String lineStr) {
-	    if (lineStr == null || lineStr.isEmpty() || lineStr.equals("0"))
-	        return -1;  // ← Return -1 to indicate invalid/unknown line
-	    try {
-	        // Handle ranges like "10-15"
-	        if (lineStr.contains("-")) {
-	            return Integer.parseInt(lineStr.split("-")[0]);
-	        }
-	        return Integer.parseInt(lineStr);
-	    } catch (NumberFormatException e) {
-	        return -1;  // ← Return -1 for unparseable line numbers
-	    }
+		if (lineStr == null || lineStr.isEmpty() || lineStr.equals("0"))
+			return -1; // ← Return -1 to indicate invalid/unknown line
+		try {
+			// Handle ranges like "10-15"
+			if (lineStr.contains("-")) {
+				return Integer.parseInt(lineStr.split("-")[0]);
+			}
+			return Integer.parseInt(lineStr);
+		} catch (NumberFormatException e) {
+			return -1; // ← Return -1 for unparseable line numbers
+		}
 	}
 
 	/**

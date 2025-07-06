@@ -488,18 +488,19 @@ public class DetectionHandler implements RequestHandler<DetectionRequest, Detect
 		}
 
 		return Issue.builder()
-		    .id(UUID.randomUUID().toString())
-		    .type(fields.get("type"))
-		    .category(category)
-		    .severity(fields.get("severity"))
-		    .confidence(calculateConfidence(fields))
-		    .file(file.getPath())
-		    .line(lineNumber)
-		    .column(0)
-		    .description(fields.get("description"))
-		    .codeSnippet(fields.get("code"))
-		    .language(file.getLanguage())
-		    .build();
+			    .id(UUID.randomUUID().toString())
+			    .type(fields.get("type"))
+			    .title(fields.get("type") != null ? fields.get("type").replace("_", " ") : "Unknown Issue")
+			    .category(category)
+			    .severity(fields.get("severity"))
+			    .confidence(calculateConfidence(fields))
+			    .file(file.getPath())
+			    .line(lineNumber)
+			    .column(0)
+			    .description(fields.get("description"))
+			    .codeSnippet(fields.get("code"))
+			    .language(file.getLanguage())
+			    .build();
 	}
 
 	/**

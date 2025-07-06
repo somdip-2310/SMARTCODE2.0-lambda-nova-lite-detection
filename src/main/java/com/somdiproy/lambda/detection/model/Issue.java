@@ -15,11 +15,22 @@ public class Issue {
     
     @JsonProperty("type")
     private String type;
-    
+
+    @JsonProperty("title")
+    private String title;
+
     @JsonProperty("category")
     private String category;
     
-    @JsonProperty("severity")
+    public String getTitle() {
+		return title;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
+	@JsonProperty("severity")
     private String severity;
     
     @JsonProperty("confidence")
@@ -280,7 +291,12 @@ public class Issue {
             issue.setType(type);
             return this;
         }
-        
+
+        public IssueBuilder title(String title) {
+            issue.setTitle(title);
+            return this;
+        }
+
         public IssueBuilder category(String category) {
             issue.setCategory(category);
             return this;

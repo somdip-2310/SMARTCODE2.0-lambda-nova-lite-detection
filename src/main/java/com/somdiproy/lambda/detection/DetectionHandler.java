@@ -534,9 +534,9 @@ public class DetectionHandler implements RequestHandler<DetectionRequest, Detect
 					    .type(fields.get("type"))
 					    .title(fields.get("type") != null ? fields.get("type").replace("_", " ") : "Unknown Issue")
 						.category(category).severity(fields.get("severity")).confidence(calculateConfidence(fields))
-						.file(file.getPath() != null && !file.getPath().isEmpty() ? 
-							    (file.getPath().contains("/") ? file.getPath().substring(file.getPath().lastIndexOf("/") + 1) : file.getPath()) : 
-							    "Unknown.java").line(lineNumber).column(0).description(description)
+						.file(file.getPath() != null && !file.getPath().isEmpty() ? file.getPath() : file.getName())
+						.addMetadata("filePath", file.getPath())
+						.addMetadata("fileName", file.getName()).line(lineNumber).column(0).description(description)
 						.codeSnippet(fields.get("code")).language(file.getLanguage()).build();
 	}
 

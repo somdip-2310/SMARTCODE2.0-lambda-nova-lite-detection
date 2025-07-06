@@ -508,20 +508,35 @@ public class DetectionHandler implements RequestHandler<DetectionRequest, Detect
 		}
 
 		// Ensure we have a proper description from the LLM
-				String description = fields.get("description");
-				if (description == null || description.trim().isEmpty()) {
-					log.warn("⚠️ No description found in LLM response for {} issue", fields.get("type"));
-					// This should not happen if prompts are working correctly
-					description = String.format("Issue detected: %s. Please review the code for potential problems.", 
-						fields.get("type") != null ? fields.get("type").replace("_", " ") : "Unknown issue");
+		String description = fields.get("description");
+		if (description == null || description.trim().isEmpty()) {
+			// Try to extract description from the code field if it contains comments
+			String code = fields.get("code");
+			if (code != null && code.contains("//")) {
+				int commentStart = code.indexOf("//");
+				int commentEnd = code.indexOf("\n", commentStart);
+				if (commentEnd > commentStart) {
+					description = code.substring(commentStart + 2, commentEnd).trim();
 				}
+			}
+			
+			if (description == null || description.trim().isEmpty()) {
+				log.warn("⚠️ No description found in LLM response for {} issue", fields.get("type"));
+				description = String.format("%s detected in %s code. This issue can impact %s and should be reviewed for proper implementation.", 
+					fields.get("type") != null ? fields.get("type").replace("_", " ") : "Unknown issue",
+					file.getLanguage(),
+					category);
+			}
+		}
 				
 				return Issue.builder()
 					    .id(UUID.randomUUID().toString())
 					    .type(fields.get("type"))
 					    .title(fields.get("type") != null ? fields.get("type").replace("_", " ") : "Unknown Issue")
 						.category(category).severity(fields.get("severity")).confidence(calculateConfidence(fields))
-						.file(file.getPath()).line(lineNumber).column(0).description(description)
+						.file(file.getPath() != null && !file.getPath().isEmpty() ? 
+							    (file.getPath().contains("/") ? file.getPath().substring(file.getPath().lastIndexOf("/") + 1) : file.getPath()) : 
+							    "Unknown.java").line(lineNumber).column(0).description(description)
 						.codeSnippet(fields.get("code")).language(file.getLanguage()).build();
 	}
 

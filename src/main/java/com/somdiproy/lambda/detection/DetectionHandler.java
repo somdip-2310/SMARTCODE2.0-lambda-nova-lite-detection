@@ -274,39 +274,41 @@ public class DetectionHandler implements RequestHandler<DetectionRequest, Detect
 	private String buildSecurityAnalysisPrompt(DetectionRequest.FileInput file) {
 		return String.format(
 				"""
-						Analyze this %s code for security vulnerabilities. Focus on:
-						- SQL Injection vulnerabilities
-						- Cross-Site Scripting (XSS) risks
-						- Insecure deserialization
-						- Hardcoded credentials or secrets
-						- Cryptographic weaknesses
-						- Authentication/authorization flaws
-						- Path traversal vulnerabilities
+																		Analyze this %s code for security vulnerabilities. Focus on:
+																		- SQL Injection vulnerabilities
+																		- Cross-Site Scripting (XSS) risks
+																		- Insecure deserialization
+																		- Hardcoded credentials or secrets
+																		- Cryptographic weaknesses
+																		- Authentication/authorization flaws
+																		- Path traversal vulnerabilities
 
-						For each issue found, provide:
+																		For each issue found, provide:
 						1. Issue type (e.g., "SQL_INJECTION")
 						2. Severity (critical/high/medium/low)
-						3. Line number(s) affected
+						3. Line number(s) affected - IMPORTANT: Look for "// Line X" or "# Line X" comments in the code to identify exact line numbers. If no line comments found, provide a range (e.g., "15-20") based on the code structure
 						4. Detailed description explaining impact and context (2-3 sentences)
-						5. The vulnerable code snippet
+						5. The vulnerable code snippet INCLUDING any line number comments
 
-						DESCRIPTION FORMAT: Start with the vulnerability type, explain the security risk,
-						describe the potential impact (e.g., "SQL Injection vulnerability allows attackers
-						to manipulate database queries. This could lead to unauthorized data access,
-						modification, or deletion. The user input is directly concatenated into the SQL query without validation.")
+																		DESCRIPTION FORMAT: MUST be 2-3 complete sentences. First sentence: State the vulnerability type and what it is.
+												Second sentence: Explain how an attacker can exploit this vulnerability.
+												Third sentence: Describe the potential impact on the system/data.
+												Example: "SQL Injection vulnerability occurs when user input is directly concatenated into database queries.
+												An attacker can exploit this by injecting malicious SQL commands through input fields to bypass authentication or extract sensitive data.
+												This could lead to complete database compromise, data theft, or unauthorized system access."
 
-						Return results in this exact format:
-						ISSUE_START
-						type: [ISSUE_TYPE]
-						severity: [SEVERITY]
-						line: [LINE_NUMBER]
-						description: [DETAILED_DESCRIPTION_WITH_IMPACT]
-						code: [CODE_SNIPPET]
-						ISSUE_END
+																		Return results in this exact format:
+																		ISSUE_START
+																		type: [ISSUE_TYPE]
+																		severity: [SEVERITY]
+																		line: [LINE_NUMBER]
+																		description: [DETAILED_DESCRIPTION_WITH_IMPACT]
+																		code: [CODE_SNIPPET]
+																		ISSUE_END
 
-						Code to analyze:
-						%s
-						""",
+																		Code to analyze:
+																		%s
+																		""",
 				file.getLanguage(), file.getOptimizedContent());
 	}
 
@@ -314,68 +316,74 @@ public class DetectionHandler implements RequestHandler<DetectionRequest, Detect
 	 * Build performance analysis prompt
 	 */
 	private String buildPerformanceAnalysisPrompt(DetectionRequest.FileInput file) {
-		return String.format("""
-								Analyze this %s code for performance issues. Focus on:
-								- Time complexity problems (O(n²) or worse)
-								- Memory leaks or excessive allocation
-								- Inefficient database queries
-								- Blocking I/O operations
-								- Unnecessary loops or recursion
-								- Missing caching opportunities
+		return String.format(
+				"""
+														Analyze this %s code for performance issues. Focus on:
+														- Time complexity problems (O(n²) or worse)
+														- Memory leaks or excessive allocation
+														- Inefficient database queries
+														- Blocking I/O operations
+														- Unnecessary loops or recursion
+														- Missing caching opportunities
 
-								For each issue found, provide:
-				1. Issue type (e.g., "INEFFICIENT_LOOP")
-				2. Severity (high/medium/low)
-				3. Line number(s) affected
-				4. Performance impact description
-				5. The problematic code snippet
+														For each issue found, provide:
+										For each issue found, provide:
+						1. Issue type (e.g., "INEFFICIENT_LOOP")
+						2. Severity (high/medium/low)
+						3. Line number(s) affected - IMPORTANT: Look for "// Line X" or "# Line X" comments in the code to identify exact line numbers. If no line comments found, provide a range (e.g., "15-20") based on the code structure
+						4. Performance impact description (MUST be 2-3 sentences: What is the issue, How it impacts performance, What happens at scale)
+						5. The problematic code snippet INCLUDING any line number comments
 
-				Return results in this exact format:
-								ISSUE_START
-								type: [ISSUE_TYPE]
-								severity: [SEVERITY]
-								line: [LINE_NUMBER]
-								description: [DESCRIPTION]
-								code: [CODE_SNIPPET]
-								ISSUE_END
+										Return results in this exact format:
+														ISSUE_START
+														type: [ISSUE_TYPE]
+														severity: [SEVERITY]
+														line: [LINE_NUMBER]
+														description: [DESCRIPTION]
+														code: [CODE_SNIPPET]
+														ISSUE_END
 
-								Code to analyze:
-								%s
-								""", file.getLanguage(), file.getOptimizedContent());
+														Code to analyze:
+														%s
+														""",
+				file.getLanguage(), file.getOptimizedContent());
 	}
 
 	/**
 	 * Build code quality analysis prompt
 	 */
 	private String buildQualityAnalysisPrompt(DetectionRequest.FileInput file) {
-		return String.format("""
-								Analyze this %s code for quality issues. Focus on:
-								- Code duplication (DRY violations)
-								- High cyclomatic complexity
-								- Poor naming conventions
-								- Missing error handling
-								- Lack of documentation
-								- Code smells and anti-patterns
+		return String.format(
+				"""
+														Analyze this %s code for quality issues. Focus on:
+														- Code duplication (DRY violations)
+														- High cyclomatic complexity
+														- Poor naming conventions
+														- Missing error handling
+														- Lack of documentation
+														- Code smells and anti-patterns
 
-								For each issue found, provide ALL of the following:
-				1. Issue type (e.g., "CODE_DUPLICATION") - REQUIRED
-				2. Severity (medium/low) - REQUIRED
-				3. Line number(s) affected
-				4. Quality impact description
-				5. The problematic code snippet
+														For each issue found, provide ALL of the following:
+										For each issue found, provide:
+						1. Issue type (e.g., "CODE_DUPLICATION")
+						2. Severity (medium/low)
+						3. Line number(s) affected - IMPORTANT: Look for "// Line X" or "# Line X" comments in the code to identify exact line numbers. If no line comments found, provide a range (e.g., "15-20") based on the code structure
+						4. Quality impact description (MUST be 2-3 sentences: What is the quality issue, How it affects maintainability, Why it matters for the codebase)
+						5. The problematic code snippet
 
-				Return results in this EXACT format with ALL fields:
-								ISSUE_START
-								type: [ISSUE_TYPE]
-								severity: [SEVERITY]
-								line: [LINE_NUMBER]
-								description: [DESCRIPTION]
-								code: [CODE_SNIPPET]
-								ISSUE_END
+										Return results in this EXACT format with ALL fields:
+														ISSUE_START
+														type: [ISSUE_TYPE]
+														severity: [SEVERITY]
+														line: [LINE_NUMBER]
+														description: [DESCRIPTION]
+														code: [CODE_SNIPPET]
+														ISSUE_END
 
-								Code to analyze:
-								%s
-								""", file.getLanguage(), file.getOptimizedContent());
+														Code to analyze:
+														%s
+														""",
+				file.getLanguage(), file.getOptimizedContent());
 	}
 
 	/**
@@ -394,7 +402,7 @@ public class DetectionHandler implements RequestHandler<DetectionRequest, Detect
 								For each issue found, provide ALL of the following:
 				1. Issue type (e.g., "RESOURCE_LEAK") - REQUIRED
 				2. Severity (medium/low) - REQUIRED
-				3. Line number(s) affected
+				3. Line number(s) affected - IMPORTANT: Look for "// Line X" or "# Line X" comments in the code to identify exact line numbers. If no line comments found, provide a range (e.g., "15-20") based on the code structure
 				4. Best practice description
 				5. The problematic code snippet
 
@@ -493,13 +501,16 @@ public class DetectionHandler implements RequestHandler<DetectionRequest, Detect
 		fields.put("type", type);
 
 		int lineNumber = parseLineNumber(fields.get("line"));
-		// Only create issue if we have a valid line number (not -1)
+		// Don't skip issues without line numbers - use default
 		if (lineNumber <= 0) {
-			return null; // ← Skip issues without valid line numbers
+		    lineNumber = 1;  // Default to line 1 instead of skipping
+		    log.warn("⚠️ No valid line number found for " + fields.get("type") + ", defaulting to 1");
 		}
 
-		return Issue.builder().id(UUID.randomUUID().toString()).type(fields.get("type"))
-				.title(fields.get("type") != null ? fields.get("type").replace("_", " ") : "Unknown Issue")
+		return Issue.builder()
+			    .id(UUID.randomUUID().toString())
+			    .type(fields.get("type"))
+			    .title(fields.get("type") != null ? fields.get("type").replace("_", " ") : "Unknown Issue")
 				.category(category).severity(fields.get("severity")).confidence(calculateConfidence(fields))
 				.file(file.getPath()).line(lineNumber).column(0).description(fields.get("description"))
 				.codeSnippet(fields.get("code")).language(file.getLanguage()).build();

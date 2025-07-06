@@ -170,6 +170,17 @@ public class DetectionRequest {
         @JsonProperty("encoding")
         private String encoding;
         
+        private Map<Integer, Integer> lineNumberMap; // Maps optimized line -> original line
+        
+        // Getters and setters
+        public Map<Integer, Integer> getLineNumberMap() {
+            return lineNumberMap;
+        }
+        
+        public void setLineNumberMap(Map<Integer, Integer> lineNumberMap) {
+            this.lineNumberMap = lineNumberMap;
+        }
+        
         // Constructors
         public FileInput() {}
         

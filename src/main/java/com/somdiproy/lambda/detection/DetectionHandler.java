@@ -507,13 +507,22 @@ public class DetectionHandler implements RequestHandler<DetectionRequest, Detect
 		    log.warn("⚠️ No valid line number found for " + fields.get("type") + ", defaulting to 1");
 		}
 
-		return Issue.builder()
-			    .id(UUID.randomUUID().toString())
-			    .type(fields.get("type"))
-			    .title(fields.get("type") != null ? fields.get("type").replace("_", " ") : "Unknown Issue")
-				.category(category).severity(fields.get("severity")).confidence(calculateConfidence(fields))
-				.file(file.getPath()).line(lineNumber).column(0).description(fields.get("description"))
-				.codeSnippet(fields.get("code")).language(file.getLanguage()).build();
+		// Ensure we have a proper description from the LLM
+				String description = fields.get("description");
+				if (description == null || description.trim().isEmpty()) {
+					log.warn("⚠️ No description found in LLM response for {} issue", fields.get("type"));
+					// This should not happen if prompts are working correctly
+					description = String.format("Issue detected: %s. Please review the code for potential problems.", 
+						fields.get("type") != null ? fields.get("type").replace("_", " ") : "Unknown issue");
+				}
+				
+				return Issue.builder()
+					    .id(UUID.randomUUID().toString())
+					    .type(fields.get("type"))
+					    .title(fields.get("type") != null ? fields.get("type").replace("_", " ") : "Unknown Issue")
+						.category(category).severity(fields.get("severity")).confidence(calculateConfidence(fields))
+						.file(file.getPath()).line(lineNumber).column(0).description(description)
+						.codeSnippet(fields.get("code")).language(file.getLanguage()).build();
 	}
 
 	/**

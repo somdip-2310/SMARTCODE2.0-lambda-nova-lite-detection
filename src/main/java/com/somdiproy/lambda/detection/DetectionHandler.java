@@ -548,10 +548,16 @@ public class DetectionHandler implements RequestHandler<DetectionRequest, Detect
 		try {
 			// Handle ranges like "10-15"
 			if (lineStr.contains("-")) {
-				return Integer.parseInt(lineStr.split("-")[0]);
+				return Integer.parseInt(lineStr.split("-")[0].trim());
+			}
+			// Handle various formats: "123", "Line 123", "L123", etc.
+			String cleaned = lineStr.replaceAll("[^0-9]", "");
+			if (!cleaned.isEmpty()) {
+				return Integer.parseInt(cleaned);
 			}
 			return Integer.parseInt(lineStr);
 		} catch (NumberFormatException e) {
+			log.warn("Failed to parse line number from: {}", lineStr);
 			return -1; // ← Return -1 for unparseable line numbers
 		}
 	}

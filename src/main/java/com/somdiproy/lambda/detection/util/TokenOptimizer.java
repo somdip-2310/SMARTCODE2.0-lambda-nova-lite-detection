@@ -23,14 +23,22 @@ public class TokenOptimizer {
         
         String optimized = content;
         
-        // Remove comments based on language
+        // Remove comments based on language BUT preserve line number comments
         if ("java".equalsIgnoreCase(language) || "javascript".equalsIgnoreCase(language) 
             || "typescript".equalsIgnoreCase(language) || "c".equalsIgnoreCase(language)
             || "cpp".equalsIgnoreCase(language) || "csharp".equalsIgnoreCase(language)) {
+            // First preserve line number comments
+            optimized = optimized.replaceAll("//\\s*Line\\s*(\\d+)", "%%LINE%%$1%%");
             optimized = MULTI_LINE_COMMENT.matcher(optimized).replaceAll("");
             optimized = SINGLE_LINE_COMMENT.matcher(optimized).replaceAll("");
+            // Restore line number comments
+            optimized = optimized.replaceAll("%%LINE%%(\\d+)%%", "// Line $1");
         } else if ("python".equalsIgnoreCase(language) || "ruby".equalsIgnoreCase(language)) {
+            // First preserve line number comments
+            optimized = optimized.replaceAll("#\\s*Line\\s*(\\d+)", "%%LINE%%$1%%");
             optimized = PYTHON_COMMENT.matcher(optimized).replaceAll("");
+            // Restore line number comments
+            optimized = optimized.replaceAll("%%LINE%%(\\d+)%%", "# Line $1");
         }
         
         // Normalize whitespace
